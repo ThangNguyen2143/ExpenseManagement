@@ -1,20 +1,6 @@
+import TransactionCard from '@/src/components/transaction/TransactionCard';
 import { SectionList, Text, View } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
-type TransactionItem = {
-  id: string;
-  name: string;
-  amount: string;
-};
-function TransactionCard({ item }: { item: TransactionItem }) {
-  return (
-    <View className="mb-3 rounded-2xl bg-zinc-800 px-4 py-4">
-      <View className="flex-row items-center justify-between">
-        <Text className="text-base font-medium text-white">{item.name}</Text>
-        <Text className="text-base font-bold text-rose-400">{item.amount}</Text>
-      </View>
-    </View>
-  );
-}
+
 function TransactionPage() {
   const groupedTransactions = [
     {
@@ -30,11 +16,20 @@ function TransactionPage() {
     },
   ];
   return (
-    <ScrollView className="flex-1 items-center justify-center bg-black">
+    <View style={{ flex: 1, backgroundColor: '#1E293B' }}>
       <SectionList
         sections={groupedTransactions}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 120 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 16,
+          paddingBottom: 120,
+        }}
+        ListHeaderComponent={
+          <View className="mb-4">
+            <Text className="text-gray-400">Danh sách chi tiêu gần đây</Text>
+          </View>
+        }
         renderSectionHeader={({ section: { title } }) => (
           <Text className="mb-3 mt-4 text-lg font-bold text-white">{title}</Text>
         )}
@@ -42,7 +37,7 @@ function TransactionPage() {
         stickySectionHeadersEnabled={false}
         showsVerticalScrollIndicator={false}
       />
-    </ScrollView>
+    </View>
   );
 }
 
