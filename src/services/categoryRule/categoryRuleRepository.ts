@@ -12,7 +12,10 @@ export class CategoryRuleRepository {
     const all = await this.getAll();
     return all.filter((t) => t.keywords.includes(keyWord));
   }
-
+  async findByJarId(jarId: string): Promise<CategoryRuleModel[]> {
+    const all = await this.getAll();
+    return all.filter((t) => t.jarId === jarId) || [];
+  }
   async create(input: CategoryRuleModel): Promise<void> {
     const all = await this.getAll();
     await this.db.set(StorageKeys.categoryRules, [input, ...all]);

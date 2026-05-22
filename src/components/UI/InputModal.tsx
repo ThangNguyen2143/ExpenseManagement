@@ -3,17 +3,18 @@ import { PropsWithChildren } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 type Props = PropsWithChildren<{
+  title?: string;
   isVisible: boolean;
   onClose: () => void;
 }>;
 
-export default function EmojiPicker({ isVisible, children, onClose }: Props) {
+export default function InputModal({ isVisible, children, onClose, title }: Props) {
   return (
-    <View>
-      <Modal animationType="slide" transparent={true} visible={isVisible}>
+    <View className="p-2">
+      <Modal animationType="fade" transparent={true} visible={isVisible}>
         <View style={styles.modalContent}>
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>Choose a sticker</Text>
+            <Text style={styles.title}>{title || 'Thêm giao dịch'}</Text>
             <Pressable onPress={onClose}>
               <MaterialIcons name="close" color="#fff" size={22} />
             </Pressable>
@@ -24,16 +25,16 @@ export default function EmojiPicker({ isVisible, children, onClose }: Props) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   modalContent: {
-    height: '25%',
-    width: '100%',
+    minHeight: '30%',
+    height: 'auto',
+    width: '80%',
     backgroundColor: '#25292e',
-    borderTopRightRadius: 18,
-    borderTopLeftRadius: 18,
-    position: 'absolute',
-    bottom: 0,
+    borderRadius: 18,
+    alignSelf: 'center',
+    marginTop: 'auto',
+    marginBottom: 'auto',
   },
   titleContainer: {
     height: '16%',

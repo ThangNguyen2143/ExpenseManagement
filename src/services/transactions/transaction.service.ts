@@ -1,48 +1,146 @@
+import { MonthlyJarSummary } from '@/src/types/Models/Summary';
 import { TransactionModel } from '@/src/types/Models/Transaction';
+import { normalizeText } from '@/src/utils/normalizeText';
 import { parseQuickInput } from '@/src/utils/parseText';
+import * as Crypto from 'expo-crypto';
 import { JarRepository } from '../Jar/jarRepository';
-import { CategoryRuleRepository } from '../repo/categoryRuleRepository';
+import { AccountRepository } from '../account/accountRepository';
+import { CategoryRuleRepository } from '../categoryRule/categoryRuleRepository';
+import { SummaryRepository } from './sumarryRepository';
 import { TransactionRepository } from './transactionRepository';
-
 export class TransactionService {
   constructor(
     private transactionRepo: TransactionRepository,
+    private accountRepo: AccountRepository,
     private jarRepo: JarRepository,
-    private ruleRepo: CategoryRuleRepository
+    private ruleRepo: CategoryRuleRepository,
+    private summaryRepo: SummaryRepository
   ) {}
 
-  async createQuickTransaction(text: string, accountId: string) {
+  async createQuickTransaction(text: string, accountId: string, jarId?: string) {
     const parsed = parseQuickInput(text);
 
     if (!parsed.amount || parsed.amount <= 0) {
       throw new Error('INVALID_AMOUNT');
     }
 
-    const jarId =
+    const jarSaveId =
+      jarId ??
       (await this.detectJar(parsed.title, accountId)) ??
       (await this.jarRepo.findDefaultJar(accountId))?.id;
-
+    const dateKeys = this.createDateKeys();
     const transaction: TransactionModel = {
-      id: crypto.randomUUID(),
+      id: Crypto.randomUUID(),
       title: parsed.title || 'Chưa có tiêu đề',
       amount: parsed.amount,
       type: 'expense',
-      jarId,
+      jarId: jarSaveId,
       accountId,
       transactionAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      dayKey: new Date().getDate(),
-      monthKey: new Date().getMonth() + 1,
+      dayKey: dateKeys.dayKey,
+      monthKey: dateKeys.monthKey,
       yearKey: new Date().getFullYear(),
       isDraft: jarId ? false : true, // If we can't detect a jar, mark this transaction as draft for later review
     };
 
     await this.transactionRepo.create(transaction);
-
+    await this.summaryRepo.addTransaction(transaction);
+    await this.accountRepo.updateBalance(accountId, transaction.amount, 'decrease');
+    if (jarId && parsed.title) {
+      await this.learnKeyword(parsed.title, jarId);
+    }
     return transaction;
   }
 
+  async sumExpenseByJarForMonth(
+    accountId: string,
+    monthKey: number
+  ): Promise<{ jarId: string; total: number }[]> {
+    const jars = await this.jarRepo.findByAccount(accountId);
+    //Get summary data from summary repo
+    let summaries: MonthlyJarSummary[] = [];
+    jars.forEach(async (jar) => {
+      if (!jar.isArchived) {
+        const summary = await this.summaryRepo.findMonthlyJarSummary(accountId, jar.id, monthKey);
+        if (summary) summaries.push(summary); // We only care about jars that have transactions in this month, so if summary is null, we can ignore it
+      }
+    });
+    //Map summaries to result
+    const result = summaries.map((s) => ({
+      jarId: s.jarId,
+      total: s.totalExpense,
+    }));
+    return result;
+  }
+
+  sumExpenseByJarInRange(
+    accountId: string,
+    from: string,
+    to: string
+  ): Promise<{ jarId: string; total: number }[]> {
+    // This function can be implemented similarly to sumExpenseByJarForMonth, but we need to get daily summaries and filter them by date range
+    throw new Error('Not implemented yet');
+  }
+  async changeJar(transactionId: string, newJarId: string): Promise<void> {
+    const transaction = await this.transactionRepo.findById(transactionId);
+    if (!transaction) {
+      throw new Error('Transaction not found');
+    }
+    const newJar = await this.jarRepo.findById(newJarId);
+    if (!newJar) {
+      throw new Error('New jar not found');
+    }
+    await this.transactionRepo.update(transactionId, { jarId: newJarId, isDraft: false });
+    const newTransaction = { ...transaction, jarId: newJarId, isDraft: false };
+    await this.summaryRepo.replaceTransaction(transaction, newTransaction);
+  }
+  async getRecentTransactions(accountId: string, limit = 10): Promise<TransactionModel[]> {
+    const transactions = await this.transactionRepo.findByAccount(accountId);
+    // Sort transactions by transactionAt in descending order
+    transactions.sort(
+      (a, b) => new Date(b.transactionAt).getTime() - new Date(a.transactionAt).getTime()
+    );
+    return transactions.slice(0, limit);
+  }
+  async getAllTransactionsByAccountId(accountId: string): Promise<TransactionModel[]> {
+    return (await this.transactionRepo.findByAccount(accountId)).sort(
+      (a, b) => new Date(b.transactionAt).getTime() - new Date(a.transactionAt).getTime()
+    );
+  }
+  private createDateKeys(date = new Date()) {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+
+    const monthText = String(month).padStart(2, '0');
+    const dayText = String(day).padStart(2, '0');
+
+    return {
+      dayKey: Number(`${year}${monthText}${dayText}`),
+      monthKey: Number(`${year}${monthText}`),
+    };
+  }
+  private async learnKeyword(title: string, jarId: string) {
+    const normalized = normalizeText(title);
+
+    if (!normalized) return;
+
+    const existing = await this.ruleRepo.findByKeyWord(normalized);
+
+    if (existing) return;
+
+    await this.ruleRepo.create({
+      keywords: [title, normalized, title.toUpperCase()],
+      hitCount: 1,
+      normalizedKeyword: normalized,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      id: Crypto.randomUUID(),
+      jarId,
+    });
+  }
   private async detectJar(title: string, accountId: string) {
     const rules = await this.ruleRepo.findByKeyWord(title);
     // Find the rule with the highest hit count

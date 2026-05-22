@@ -1,14 +1,15 @@
-import InputModal from '@/src/components/InputModal';
+import InputModal from '@/src/components/UI/InputModal';
 import { appServices } from '@/src/services/app.service';
 import { AddNewAccountDTO } from '@/src/types/dto/AddNewAccount';
 import { Ionicons } from '@expo/vector-icons';
+import { useColorScheme } from 'nativewind';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { toast } from 'sonner-native';
-
 export default function SettingsScreen() {
-  const [isDark, setIsDark] = useState(false);
+  const { colorScheme, setColorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const [showModalUpdate, setShowModalUpdate] = useState(false);
   const [accountInput, setAccountInput] = useState<AddNewAccountDTO | undefined>(undefined);
   useEffect(() => {
@@ -40,40 +41,45 @@ export default function SettingsScreen() {
   };
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView contentInsetAdjustmentBehavior="automatic">
-        <View style={{ padding: 16 }}>
-          <Text className="mb-4 text-2xl font-bold text-zinc-900">⚙️ Cài đặt</Text>
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        className="bg-white p-4 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+        <View className="flex-1 ">
+          <Text className="mb-4 text-2xl font-bold dark:text-zinc-100">⚙️ Cài đặt</Text>
           <View className="flex-1 gap-4">
-            <View className="flex-row items-center justify-between rounded-2xl border border-zinc-200 bg-white px-2 py-4">
-              <Text className="text-base font-medium text-zinc-900">Chủ đề</Text>
-              <Pressable
-                className="mt-2 rounded-lg border border-zinc-300 bg-zinc-100 px-4 py-2"
-                onPress={() => setIsDark(!isDark)}>
-                {isDark ? (
-                  <Ionicons name="moon" size={20} color="#000" />
-                ) : (
-                  <Ionicons name="sunny" size={20} color="#000" />
-                )}
-              </Pressable>
+            <View className="flex-row items-center justify-between rounded-2xl border px-2 py-4 dark:border-zinc-700">
+              <Text className="text-base font-medium dark:text-zinc-100">Chủ đề</Text>
+              <View className="flex-row items-center gap-2">
+                <Ionicons
+                  name={isDark ? 'moon' : 'sunny'}
+                  size={20}
+                  color={isDark ? '#fff' : '#000'}
+                />
+
+                <Switch
+                  onValueChange={(value) => setColorScheme(value ? 'dark' : 'light')}
+                  value={isDark}
+                />
+              </View>
             </View>
-            <View className="flex-row items-center justify-between rounded-2xl border border-zinc-200 bg-white px-2 py-4">
-              <Text className="text-base font-medium text-zinc-900">Xóa dữ liệu</Text>
-              <Pressable className="mt-2 rounded-lg border border-zinc-300 bg-zinc-100 px-4 py-2">
-                <Text className="text-sm text-zinc-700">Xóa</Text>
+            <View className="flex-row items-center justify-between rounded-2xl border  px-2 py-4 dark:border-zinc-700">
+              <Text className="text-base font-medium dark:text-zinc-100">Xóa dữ liệu</Text>
+              <Pressable className="mt-2 rounded-lg border px-4 py-2">
+                <Text className="text-sm dark:text-zinc-100">Xóa</Text>
               </Pressable>
             </View>
           </View>
         </View>
-        <View>
+        <View className="mx-4 my-8 ">
           <Pressable
-            className="mx-4 my-8 items-center rounded-md bg-white px-4 py-2"
+            className="items-center rounded-md border px-4 py-2"
             onPress={() => setShowModalUpdate(true)}>
-            <Text className="text-center font-bold"> Cài đặt tài khoản </Text>
+            <Text className="text-center font-bold dark:text-zinc-100"> Cài đặt tài khoản </Text>
           </Pressable>
         </View>
-        <View className="mx-4 my-8 h-[1px] bg-zinc-300" />
-        <View>
-          <Text className="mt-8 text-center text-sm text-zinc-500">
+        <View className="mx-4 my-8 h-[1px] " />
+        <View className="">
+          <Text className="mt-8 text-center text-sm dark:text-zinc-100">
             © 2026 Expense Management App. All rights reserved.
           </Text>
         </View>
@@ -99,8 +105,8 @@ export default function SettingsScreen() {
             setAccountInput((pre) => ({ name: pre?.name || '', balance: parseFloat(e) || 0 }));
           }}
         />
-        <Pressable className="mx-4 items-center rounded-md bg-white p-2" onPress={onSubmit}>
-          <Text>Cập nhật</Text>
+        <Pressable className="mx-4 items-center rounded-md border px-4 py-2" onPress={onSubmit}>
+          <Text className="dark:text-zinc-100">Cập nhật</Text>
         </Pressable>
       </InputModal>
     </SafeAreaView>

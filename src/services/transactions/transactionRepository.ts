@@ -12,7 +12,10 @@ export class TransactionRepository {
     const all = await this.getAll();
     return all.filter((t) => t.accountId === accountId);
   }
-
+  async findById(id: string): Promise<TransactionModel | null> {
+    const all = await this.getAll();
+    return all.find((t) => t.id === id) ?? null;
+  }
   async create(input: TransactionModel): Promise<void> {
     const all = await this.getAll();
     await this.db.set(StorageKeys.transactions, [input, ...all]);

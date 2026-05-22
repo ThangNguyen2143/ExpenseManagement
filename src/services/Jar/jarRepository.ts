@@ -1,7 +1,9 @@
 import { StorageKeys } from '@/src/constants/ModelName';
 import { AddNewJarDTO } from '@/src/types/dto/AddNewJar';
 import { JarModel } from '@/src/types/Models/Jar';
+import * as Crypto from 'expo-crypto';
 import { JsonStorage } from '../db/JsonStore';
+
 export class JarRepository {
   constructor(private db: JsonStorage) {}
 
@@ -13,14 +15,17 @@ export class JarRepository {
     const all = await this.getAll();
     return all.filter((t) => t.accountId === accountId);
   }
-
+  async findById(id: string): Promise<JarModel | undefined> {
+    const all = await this.getAll();
+    return all.find((t) => t.id === id);
+  }
   async findDefaultJar(accountId: string): Promise<JarModel | undefined> {
     const all = await this.getAll();
     return all.find((t) => t.accountId === accountId && t.isDefault);
   }
   async create(input: AddNewJarDTO): Promise<void> {
     const newJar: JarModel = {
-      id: crypto.randomUUID(),
+      id: Crypto.randomUUID(),
       name: input.name,
       limit: input.limit,
       accountId: input.accountId,

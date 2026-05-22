@@ -1,14 +1,22 @@
+import { useSelectedAccount } from '@/src/Context/AccountContext';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
-import InputModal from '../InputModal';
+import { router } from 'expo-router';
+import { Pressable, Text } from 'react-native';
 export default function FAB() {
-  const [showModalInput, setShowModalInput] = useState(false);
-  const [text, onChangeText] = useState('');
-  const onAddTransaction = () => {
-    // Handle adding transaction logic here
-    setShowModalInput(false);
+  const { selectedAccountId, isLoading, isReady } = useSelectedAccount();
+  const onPressAdd = () => {
+    if (!selectedAccountId) {
+      return;
+    }
+
+    router.push({
+      pathname: '/transactions/quick-create',
+      params: {
+        accountId: selectedAccountId,
+      },
+    });
   };
+  if (isLoading || !isReady) return null;
   return (
     <>
       <Pressable
@@ -23,31 +31,11 @@ export default function FAB() {
         bg-blue-600 
         shadow-xl
       "
-        onPress={() => {
-          setShowModalInput(true);
-        }}>
+        onPress={onPressAdd}>
         <Text className="text-lg font-bold text-white">
           <Ionicons name="add" size={28} />
         </Text>
       </Pressable>
-      <InputModal
-        isVisible={showModalInput}
-        onClose={() => setShowModalInput(false)}
-        title="Thêm giao dịch">
-        <TextInput
-          className="border border-zinc-300 bg-white p-4 text-zinc-800"
-          placeholder="Vd: Cafe 25k"
-          onChangeText={onChangeText}
-          value={text}
-        />
-        <View className="flex-row items-center justify-end space-x-4 px-4 py-3">
-          <Pressable
-            onPress={onAddTransaction}
-            className="rounded-full bg-blue-600 px-6 py-4 active:bg-blue-700">
-            <Text className="text-lg font-bold text-white">Lưu</Text>
-          </Pressable>
-        </View>
-      </InputModal>
     </>
   );
 }

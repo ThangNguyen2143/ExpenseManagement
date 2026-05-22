@@ -2,13 +2,15 @@ import { appServices } from '@/src/services/app.service';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { toast } from 'sonner-native';
+import { z } from 'zod';
 type CreateAccountModalProps = {
   isVisible: boolean;
   onClose: () => void;
 };
 const styles = StyleSheet.create({
   modalContent: {
-    height: '25%',
+    minHeight: '25%',
+
     width: '80%',
     backgroundColor: '#25292e',
     borderRadius: 18,
@@ -36,13 +38,17 @@ function CreateAccountModal({ isVisible, onClose }: CreateAccountModalProps) {
   const [accountName, setAccountName] = useState('');
   const [initialBalance, setInitialBalance] = useState('');
   const onSubmit = async () => {
-    const balance = parseFloat(initialBalance);
-    if (isNaN(balance)) {
+    const balance = z.number().safeParse(Number.parseFloat(initialBalance));
+    if (balance.success === false) {
+      console.log('Invalid initial balance:', balance.error);
       toast.error('Số dư ban đầu không hợp lệ');
       return;
     }
     try {
-      await appServices.services.accountService.createAccount({ balance, name: accountName });
+      await appServices.services.accountService.createAccount({
+        balance: balance.data,
+        name: accountName,
+      });
       onClose();
       toast.success('Tài khoản mới đã được tạo');
     } catch (error) {
@@ -57,24 +63,26 @@ function CreateAccountModal({ isVisible, onClose }: CreateAccountModalProps) {
           <View style={styles.titleContainer}>
             <Text style={styles.title}>Tạo tài khoản mới</Text>
           </View>
-          <View>
-            <TextInput
-              placeholder="Tên tài khoản"
-              className="m-4 rounded-md border border-zinc-600 bg-zinc-700 p-2 text-white"
-              value={accountName}
-              onChangeText={setAccountName}
-            />
-            <TextInput
-              placeholder="Số dư ban đầu"
-              className="mx-4 mb-4 rounded-md border border-zinc-600 bg-zinc-700 p-2 text-white"
-              value={initialBalance}
-              onChangeText={setInitialBalance}
-            />
-          </View>
-          <View>
-            <Pressable onPress={onSubmit} className="mx-4 items-center rounded-md bg-white p-2">
-              <Text>Tạo mới</Text>
-            </Pressable>
+          <View className="p-3">
+            <View>
+              <TextInput
+                placeholder="Tên tài khoản"
+                className="m-4 rounded-md border border-zinc-600 bg-zinc-700 p-2 text-white"
+                value={accountName}
+                onChangeText={setAccountName}
+              />
+              <TextInput
+                placeholder="Số dư ban đầu"
+                className="mx-4 mb-4 rounded-md border border-zinc-600 bg-zinc-700 p-2 text-white"
+                value={initialBalance}
+                onChangeText={setInitialBalance}
+              />
+            </View>
+            <View>
+              <Pressable onPress={onSubmit} className="mx-4 items-center rounded-md bg-white p-2">
+                <Text>Tạo mới</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>

@@ -1,5 +1,5 @@
 import { JarRepository } from '../Jar/jarRepository';
-import { CategoryRuleRepository } from '../repo/categoryRuleRepository';
+import { CategoryRuleRepository } from '../categoryRule/categoryRuleRepository';
 import { AccountRepository } from './accountRepository';
 
 export class AccountService {
@@ -36,12 +36,11 @@ export class AccountService {
     await this.accountRepo.delete(accountId);
     const jars = await this.jarRepo.findByAccount(accountId);
     for (const jar of jars) {
+      const ruleRelate = await this.ruleRepo.findByJarId(jar.id);
+      for (const rule of ruleRelate) {
+        await this.ruleRepo.delete(rule.id);
+      }
       await this.jarRepo.delete(jar.id);
-    }
-    // Assuming transactions are also related to accounts, we should delete them as well
-    const transactions = await this.ruleRepo.findByKeyWord(accountId); // This is just an example, you should implement a proper method to find transactions by account
-    for (const transaction of transactions) {
-      await this.ruleRepo.delete(transaction.id); // Again, this is just an example, you should implement a proper method to delete transactions by id
     }
   }
 }

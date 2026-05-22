@@ -2,7 +2,7 @@ export function parseQuickInput(text: string) {
   // Implementation for parsing quick input
   // 1k => 1000; 1m => 1000000; 1.5k => 1500
   // 1000 => 1000; 1,000 => 1000; 1.000 => 1000
-  const amountRegex = /([\d.,]+)([kKmM]?)/;
+  const amountRegex = /(\d+(?:[.,]\d+)?)([kKmM]?)/;
   const match = text.match(amountRegex);
   let amount = 0;
   if (match) {

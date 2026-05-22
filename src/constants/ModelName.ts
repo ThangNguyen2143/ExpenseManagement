@@ -8,5 +8,10 @@ export const StorageKeys = {
   categoryRules: `${APP_PREFIX}:category_rules`,
   settings: `${APP_PREFIX}:settings`,
   ONBOARDING_KEY: `${APP_PREFIX}:hasCompletedOnboarding`,
+  dailySummaries: `${APP_PREFIX}:dailySummaries`,
+  monthlySummaries: `${APP_PREFIX}:monthlySummaries`,
+  dailyJarSummaries: `${APP_PREFIX}:dailyJarSummaries`,
+  monthlyJarSummaries: `${APP_PREFIX}:monthlyJarSummaries`,
+  SELECTED_ACCOUNT_ID: `${APP_PREFIX}:selected_account_id`,
 } as const;
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];
