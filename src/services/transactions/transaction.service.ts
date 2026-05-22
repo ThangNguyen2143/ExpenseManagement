@@ -1,5 +1,5 @@
 import { MonthlyJarSummary } from '@/src/types/Models/Summary';
-import { TransactionModel } from '@/src/types/Models/Transaction';
+import { TransactionModel, TypeTransactionModel } from '@/src/types/Models/Transaction';
 import { normalizeText } from '@/src/utils/normalizeText';
 import { parseQuickInput } from '@/src/utils/parseText';
 import * as Crypto from 'expo-crypto';
@@ -17,7 +17,12 @@ export class TransactionService {
     private summaryRepo: SummaryRepository
   ) {}
 
-  async createQuickTransaction(text: string, accountId: string, jarId?: string) {
+  async createQuickTransaction(
+    text: string,
+    accountId: string,
+    type?: TypeTransactionModel,
+    jarId?: string
+  ) {
     const parsed = parseQuickInput(text);
 
     if (!parsed.amount || parsed.amount <= 0) {
@@ -29,7 +34,7 @@ export class TransactionService {
       (await this.detectJar(parsed.title, accountId)) ??
       (await this.jarRepo.findDefaultJar(accountId))?.id;
     const dateKeys = this.createDateKeys();
-    const transaction: TransactionModel = {
+    let transaction: TransactionModel = {
       id: Crypto.randomUUID(),
       title: parsed.title || 'Chưa có tiêu đề',
       amount: parsed.amount,
@@ -44,10 +49,16 @@ export class TransactionService {
       yearKey: new Date().getFullYear(),
       isDraft: jarId ? false : true, // If we can't detect a jar, mark this transaction as draft for later review
     };
-
+    if (type === 'income') {
+      transaction.type = 'income';
+      transaction.jarId = undefined; // Income transactions don't need jar, we will just put them in a virtual jar in summary
+      transaction.isDraft = false; // Income transactions are not draft, we can save them directly
+      await this.accountRepo.updateBalance(accountId, transaction.amount, 'increase');
+    } else {
+      await this.accountRepo.updateBalance(accountId, transaction.amount, 'decrease');
+    }
     await this.transactionRepo.create(transaction);
     await this.summaryRepo.addTransaction(transaction);
-    await this.accountRepo.updateBalance(accountId, transaction.amount, 'decrease');
     if (jarId && parsed.title) {
       await this.learnKeyword(parsed.title, jarId);
     }
@@ -108,6 +119,25 @@ export class TransactionService {
     return (await this.transactionRepo.findByAccount(accountId)).sort(
       (a, b) => new Date(b.transactionAt).getTime() - new Date(a.transactionAt).getTime()
     );
+  }
+  async deleteTransaction(transactionId: string): Promise<void> {
+    const transaction = await this.transactionRepo.findById(transactionId);
+    if (!transaction) {
+      throw new Error('Transaction not found');
+    }
+    if (transaction.dayKey === this.createDateKeys().dayKey) {
+      if (transaction.type === 'expense') {
+        await this.accountRepo.updateBalance(transaction.accountId, transaction.amount, 'increase');
+      } else if (transaction.type === 'income') {
+        await this.accountRepo.updateBalance(transaction.accountId, transaction.amount, 'decrease');
+      }
+      await this.transactionRepo.delete(transactionId);
+      await this.summaryRepo.rollbackTransaction(transaction);
+    } else {
+      throw new Error(
+        'Only transactions created today can be deleted to prevent data inconsistency in summary. Please contact support if you want to delete this transaction.'
+      );
+    }
   }
   private createDateKeys(date = new Date()) {
     const year = date.getFullYear();

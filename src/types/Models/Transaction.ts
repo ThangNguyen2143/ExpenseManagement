@@ -1,8 +1,9 @@
+export type TypeTransactionModel = 'expense' | 'income';
 export type TransactionModel = {
   id: string;
   title: string;
   amount: number;
-  type: 'expense' | 'income';
+  type: TypeTransactionModel;
   jarId?: string;
   accountId: string;
   transactionAt: string; // thời điểm phát sinh giao dịch

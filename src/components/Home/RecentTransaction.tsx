@@ -1,3 +1,5 @@
+import { useTransactionEvent } from '@/src/Context/TransactionEventContext';
+import { appServices } from '@/src/services/app.service';
 import { JarDashboardItem } from '@/src/services/Jar/types';
 import { TransactionView } from '@/src/types/Views/TransactionView';
 import { useMemo, useState } from 'react';
@@ -15,6 +17,7 @@ function RecentTransaction({
   JarList: JarDashboardItem[];
   onRefresh?: () => void;
 }) {
+  const { notifyTransactionChanged } = useTransactionEvent();
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionView | null>(null);
   const [showModalChangeJar, setShowModalChangeJar] = useState(false);
   const [menu, setMenu] = useState({
@@ -54,12 +57,21 @@ function RecentTransaction({
     setShowModalChangeJar(true);
   };
 
-  const handleDeleteTransaction = () => {
+  const handleDeleteTransaction = async () => {
     if (!selectedTransaction) return;
-
-    console.log('delete transaction', selectedTransaction.id);
-
-    // gọi delete transaction ở đây
+    try {
+      await appServices.services.transactionService.deleteTransaction(selectedTransaction.id);
+      toast.success('Xóa giao dịch thành công');
+      onRefresh && onRefresh();
+      notifyTransactionChanged({
+        type: 'deleted',
+        accountId: selectedTransaction.accountId,
+        transactionId: selectedTransaction.id,
+      });
+    } catch {
+      toast.error('Xóa giao dịch thất bại');
+      return;
+    }
   };
 
   const menuActions: OptionMenuAction[] = useMemo(

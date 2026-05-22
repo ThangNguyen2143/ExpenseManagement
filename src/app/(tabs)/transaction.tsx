@@ -18,7 +18,7 @@ function TransactionPage() {
 
   const [listTransactions, setListTransactions] = useState<TransactionModel[]>([]);
   const [listJar, setListJar] = useState<JarModel[]>([]);
-  const { transactionChange } = useTransactionEvent();
+  const { transactionChange, notifyTransactionChanged } = useTransactionEvent();
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionView | null>(null);
   const [showModalChangeJar, setShowModalChangeJar] = useState(false);
   const fetchData = useCallback(async (accountId: string) => {
@@ -64,12 +64,22 @@ function TransactionPage() {
     setShowModalChangeJar(true);
   };
 
-  const handleDeleteTransaction = () => {
-    if (!selectedTransaction) return;
-
-    console.log('delete transaction', selectedTransaction.id);
-
-    // gọi delete transaction ở đây
+  const handleDeleteTransaction = async (item?: TransactionModel & { jarName: string | null }) => {
+    if (!selectedTransaction && !item) return;
+    try {
+      const transactionId = selectedTransaction?.id || item!.id;
+      await appServices.services.transactionService.deleteTransaction(transactionId);
+      toast.success('Xóa giao dịch thành công');
+      fetchData(accountSelected!);
+      notifyTransactionChanged({
+        type: 'deleted',
+        accountId: accountSelected!,
+        transactionId,
+      });
+    } catch {
+      toast.error('Xóa giao dịch thất bại');
+      return;
+    }
   };
 
   const menuActions: OptionMenuAction[] = useMemo(
@@ -100,6 +110,10 @@ function TransactionPage() {
 
     fetchData(accountSelected);
   }, [transactionChange, accountSelected, fetchData]);
+  useEffect(() => {
+    if (!accountSelected) return;
+    fetchData(accountSelected);
+  }, [accountSelected, fetchData]);
   const groupedTransactions = useMemo(
     () => groupTransactionByDate(listTransactions),
     [listTransactions]
@@ -114,11 +128,6 @@ function TransactionPage() {
           paddingTop: 16,
           paddingBottom: 120,
         }}
-        ListHeaderComponent={
-          <View className="mb-4">
-            <Text className="text-gray-400">Danh sách chi tiêu gần đây</Text>
-          </View>
-        }
         renderSectionHeader={({ section: { title } }) => (
           <Text className="mb-3 mt-4 text-lg font-bold text-white">{title}</Text>
         )}
@@ -134,7 +143,7 @@ function TransactionPage() {
             <TransactionCards
               key={item.id}
               item={addJarNameToTransaction}
-              onDelete={() => {}}
+              onDelete={handleDeleteTransaction}
               onLongPress={(e) => openMenu(e, addJarNameToTransaction)}
             />
           );

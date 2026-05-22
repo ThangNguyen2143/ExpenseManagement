@@ -24,7 +24,7 @@ export default function App() {
     refreshAccounts,
     isLoading,
   } = useAccountContext();
-  const { transactionChange } = useTransactionEvent();
+  const { transactionChange, notifyTransactionChanged } = useTransactionEvent();
 
   const [showFirstAccountModal, setShowFirstAccountModal] = useState(false);
   const [showAddJarModal, setShowAddJarModal] = useState(false);

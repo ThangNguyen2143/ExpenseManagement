@@ -5,14 +5,14 @@ import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 type TransactionCardProps = {
   item: TransactionModel & { jarName: string | null };
   onLongPress: (event: GestureResponderEvent) => void;
-  onDelete: () => void;
+  onDelete: (item: TransactionModel & { jarName: string | null }) => void;
 };
 function TransactionCards({ item, onLongPress, onDelete }: TransactionCardProps) {
   const renderRightActions = () => {
     return (
       <Pressable
-        onPress={onDelete}
-        className="ml-2 items-center justify-center rounded-2xl bg-rose-500 px-6">
+        onPress={() => onDelete(item)}
+        className="mb-3 ml-2 items-center justify-center rounded-2xl bg-rose-500 px-6">
         <Ionicons name="trash-bin" size={24} color={'black'} />
       </Pressable>
     );
