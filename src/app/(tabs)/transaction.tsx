@@ -129,7 +129,9 @@ function TransactionPage() {
           paddingBottom: 120,
         }}
         renderSectionHeader={({ section: { title } }) => (
-          <Text className="mb-3 mt-4 text-lg font-bold text-white">{title}</Text>
+          <Text className="mb-3 mt-4 text-lg font-bold text-zinc-900 dark:text-zinc-300">
+            {title}
+          </Text>
         )}
         renderItem={({ item }) => {
           const addJarNameToTransaction = {
