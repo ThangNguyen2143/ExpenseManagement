@@ -1,9 +1,9 @@
-import { useSelectedAccount } from '@/src/Context/AccountContext';
+import { useAccountContext } from '@/src/Context/AccountContext';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 export default function FAB() {
-  const { selectedAccountId, isLoading, isReady } = useSelectedAccount();
+  const { selectedAccountId, isLoading, isReady } = useAccountContext();
   const onPressAdd = () => {
     if (!selectedAccountId) {
       return;

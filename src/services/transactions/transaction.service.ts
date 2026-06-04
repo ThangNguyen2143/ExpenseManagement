@@ -1,5 +1,7 @@
 import { MonthlyJarSummary } from '@/src/types/Models/Summary';
 import { TransactionModel, TypeTransactionModel } from '@/src/types/Models/Transaction';
+import { TransactionTemplate } from '@/src/types/Models/TransactionTemplate';
+import { CreateNewTransactionTemplateDto } from '@/src/types/dto/AddNewTransactionTemplate';
 import { normalizeText } from '@/src/utils/normalizeText';
 import { parseQuickInput } from '@/src/utils/parseText';
 import * as Crypto from 'expo-crypto';
@@ -7,6 +9,7 @@ import { JarRepository } from '../Jar/jarRepository';
 import { AccountRepository } from '../account/accountRepository';
 import { CategoryRuleRepository } from '../categoryRule/categoryRuleRepository';
 import { SummaryRepository } from './sumarryRepository';
+import { TemplateTransactionRepository } from './templateTransactionRepository';
 import { TransactionRepository } from './transactionRepository';
 export class TransactionService {
   constructor(
@@ -14,30 +17,35 @@ export class TransactionService {
     private accountRepo: AccountRepository,
     private jarRepo: JarRepository,
     private ruleRepo: CategoryRuleRepository,
-    private summaryRepo: SummaryRepository
+    private summaryRepo: SummaryRepository,
+    private templateRepo: TemplateTransactionRepository
   ) {}
 
   async createQuickTransaction(
-    text: string,
     accountId: string,
-    type?: TypeTransactionModel,
-    jarId?: string
+    agr: {
+      text: string;
+      amount?: number;
+      type?: TypeTransactionModel;
+      jarId?: string;
+      templateId?: string;
+    }
   ) {
-    const parsed = parseQuickInput(text);
+    const parsed = parseQuickInput(agr.text);
 
-    if (!parsed.amount || parsed.amount <= 0) {
+    if ((!parsed.amount || parsed.amount <= 0 || isNaN(parsed.amount)) && !agr.amount) {
       throw new Error('INVALID_AMOUNT');
     }
 
     const jarSaveId =
-      jarId ??
+      agr.jarId ??
       (await this.detectJar(parsed.title, accountId)) ??
       (await this.jarRepo.findDefaultJar(accountId))?.id;
     const dateKeys = this.createDateKeys();
     let transaction: TransactionModel = {
       id: Crypto.randomUUID(),
       title: parsed.title || 'Chưa có tiêu đề',
-      amount: parsed.amount,
+      amount: parsed.amount || agr.amount!,
       type: 'expense',
       jarId: jarSaveId,
       accountId,
@@ -47,9 +55,9 @@ export class TransactionService {
       dayKey: dateKeys.dayKey,
       monthKey: dateKeys.monthKey,
       yearKey: new Date().getFullYear(),
-      isDraft: jarId ? false : true, // If we can't detect a jar, mark this transaction as draft for later review
+      isDraft: agr.jarId ? false : true, // If we can't detect a jar, mark this transaction as draft for later review
     };
-    if (type === 'income') {
+    if (agr.type === 'income') {
       transaction.type = 'income';
       transaction.jarId = undefined; // Income transactions don't need jar, we will just put them in a virtual jar in summary
       transaction.isDraft = false; // Income transactions are not draft, we can save them directly
@@ -59,12 +67,22 @@ export class TransactionService {
     }
     await this.transactionRepo.create(transaction);
     await this.summaryRepo.addTransaction(transaction);
-    if (jarId && parsed.title) {
-      await this.learnKeyword(parsed.title, jarId);
+    if (agr.jarId && parsed.title) {
+      await this.learnKeyword(parsed.title, agr.jarId);
+    }
+    if (agr.templateId) {
+      await this.updateTransactionTemplateCount(agr.templateId);
+    } else {
+      await this.createNewTransactionTemplate({
+        accountId,
+        type: transaction.type,
+        title: transaction.title,
+        defaultJarId: transaction.jarId,
+        lastAmount: transaction.amount,
+      });
     }
     return transaction;
   }
-
   async sumExpenseByJarForMonth(
     accountId: string,
     monthKey: number
@@ -85,7 +103,6 @@ export class TransactionService {
     }));
     return result;
   }
-
   sumExpenseByJarInRange(
     accountId: string,
     from: string,
@@ -138,6 +155,43 @@ export class TransactionService {
         'Only transactions created today can be deleted to prevent data inconsistency in summary. Please contact support if you want to delete this transaction.'
       );
     }
+  }
+  async getTransactionTemplates(
+    accountId: string,
+    opt: { limit?: number; type?: TypeTransactionModel }
+  ): Promise<TransactionTemplate[]> {
+    const result = await this.templateRepo.findByAccount(accountId);
+    const filtered = opt.type ? result.filter((t) => t.type === opt.type) : result;
+    const lengthTemplate = opt.limit && opt.limit > filtered.length ? filtered.length : opt.limit;
+    const sorted = filtered.sort((a, b) => b.usageCount - a.usageCount);
+    return sorted.slice(0, lengthTemplate);
+  }
+  async createNewTransactionTemplate(input: CreateNewTransactionTemplateDto): Promise<void> {
+    const newTemplate: TransactionTemplate = {
+      id: Crypto.randomUUID(),
+      accountId: input.accountId,
+      type: input.type,
+      title: input.title,
+      normalizedTitle: normalizeText(input.title),
+      usageCount: 1,
+      lastUsedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isArchived: false,
+      defaultJarId: input.defaultJarId,
+      lastAmount: input.lastAmount,
+    };
+    await this.templateRepo.create(newTemplate);
+  }
+  async updateTransactionTemplateCount(templateId: string): Promise<void> {
+    const template = await this.templateRepo.findById(templateId);
+    if (!template) {
+      throw new Error('Template not found');
+    }
+    template.usageCount += 1;
+    template.lastUsedAt = new Date().toISOString();
+    template.updatedAt = new Date().toISOString();
+    await this.templateRepo.update(templateId, template);
   }
   private createDateKeys(date = new Date()) {
     const year = date.getFullYear();

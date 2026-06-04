@@ -100,7 +100,12 @@ export function useQuickTransactionSuggestions(text: string, accountId?: string)
         });
       }
     }
-
+    if (scoreMap.size === 0)
+      return [allJars.find((j) => j.isDefault)].filter(Boolean).map((jar) => ({
+        id: jar?.id,
+        name: jar?.name,
+        score: 0,
+      })) as SuggestedJar[];
     return [...scoreMap.values()].sort((a, b) => b.score - a.score).slice(0, 5);
   }, [parsed.title, rules, allJars]);
 

@@ -50,7 +50,7 @@ function createTitlefromDateKey(dateKey: number) {
   } else if (y === year && m === month - 1 && today === 1 && isLastDayInMonth(m - 1, d)) {
     title = 'Cuối tháng trước';
   } else {
-    title = `Cũ hơn`;
+    title = `${d}/${m}/${y}`;
   }
   return title;
 }

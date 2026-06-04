@@ -13,5 +13,6 @@ export const StorageKeys = {
   dailyJarSummaries: `${APP_PREFIX}:dailyJarSummaries`,
   monthlyJarSummaries: `${APP_PREFIX}:monthlyJarSummaries`,
   SELECTED_ACCOUNT_ID: `${APP_PREFIX}:selected_account_id`,
+  templateTransactions: `${APP_PREFIX}:template_transactions`,
 } as const;
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];

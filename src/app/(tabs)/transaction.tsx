@@ -120,6 +120,11 @@ function TransactionPage() {
   );
   return (
     <View style={{ flex: 1 }}>
+      {groupedTransactions.length === 0 ? (
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-zinc-500">Chưa có giao dịch nào</Text>
+        </View>
+      ) : null}
       <SectionList
         sections={groupedTransactions}
         keyExtractor={(item) => item.id}

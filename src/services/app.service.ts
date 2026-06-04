@@ -7,6 +7,7 @@ import { JsonStorage } from './db/JsonStore';
 import { JarService } from './Jar/Jar.service';
 import { JarRepository } from './Jar/jarRepository';
 import { SummaryRepository } from './transactions/sumarryRepository';
+import { TemplateTransactionRepository } from './transactions/templateTransactionRepository';
 import { TransactionService } from './transactions/transaction.service';
 import { TransactionRepository } from './transactions/transactionRepository';
 const jsonStorage = new JsonStorage(asyncStorageAdapter, {
@@ -17,13 +18,16 @@ const accountRepository = new AccountRepository(jsonStorage);
 const jarRepository = new JarRepository(jsonStorage);
 const transactionRepository = new TransactionRepository(jsonStorage);
 const categoryRuleRepository = new CategoryRuleRepository(jsonStorage);
+const templateTransactionRepository = new TemplateTransactionRepository(jsonStorage);
 const summaryRepository = new SummaryRepository(jsonStorage);
+
 const transactionService = new TransactionService(
   transactionRepository,
   accountRepository,
   jarRepository,
   categoryRuleRepository,
-  summaryRepository
+  summaryRepository,
+  templateTransactionRepository
 );
 
 const onboardingService = new OnboardingService(jsonStorage, accountRepository);
@@ -37,6 +41,7 @@ export const appServices = {
     jarRepository,
     transactionRepository,
     categoryRuleRepository,
+    templateTransactionRepository,
   },
 
   services: {
