@@ -7,6 +7,7 @@ import { GestureResponderEvent, Text, View } from 'react-native';
 import { toast } from 'sonner-native';
 import TransactionCards from '../transactions/transactionCard';
 import ChangeJarModal from './Modals/ChangeJarModal';
+import ChangeTitleTransactionModal from './Modals/ChangeTitleTransactionModal';
 import { OptionMenu, OptionMenuAction } from './Modals/MenuOptionsPress';
 function RecentTransaction({
   transactions,
@@ -20,6 +21,7 @@ function RecentTransaction({
   const { notifyTransactionChanged } = useTransactionEvent();
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionView | null>(null);
   const [showModalChangeJar, setShowModalChangeJar] = useState(false);
+  const [showModalChangeTitleTransaction, setShowModalChangeTitleTransaction] = useState(false);
   const [menu, setMenu] = useState({
     visible: false,
     x: 0,
@@ -46,10 +48,7 @@ function RecentTransaction({
 
   const handleEditTransaction = () => {
     if (!selectedTransaction) return;
-
-    console.log('edit transaction', selectedTransaction.id);
-    toast.info('Tính năng đang được phát triển');
-    // mở modal edit hoặc navigate sang màn edit
+    setShowModalChangeTitleTransaction(true);
   };
 
   const handleChangeJar = async () => {
@@ -69,7 +68,7 @@ function RecentTransaction({
         transactionId: selectedTransaction.id,
       });
     } catch {
-      toast.error('Xóa giao dịch thất bại');
+      toast.error('Đã xảy ra lỗi khi xóa giao dịch');
       return;
     }
   };
@@ -120,7 +119,17 @@ function RecentTransaction({
         onClose={() => {
           setShowModalChangeJar(false);
           onRefresh && onRefresh();
+          notifyTransactionChanged({
+            type: 'updated',
+            accountId: selectedTransaction?.accountId || '',
+            transactionId: selectedTransaction?.id || '',
+          });
         }}
+      />
+      <ChangeTitleTransactionModal
+        isOpen={showModalChangeTitleTransaction}
+        onClose={() => setShowModalChangeTitleTransaction(false)}
+        transactionData={selectedTransaction as TransactionView}
       />
     </View>
   );

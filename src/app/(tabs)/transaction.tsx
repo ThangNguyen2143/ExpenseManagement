@@ -81,7 +81,15 @@ function TransactionPage() {
       return;
     }
   };
-
+  const handleCLoseChangeJarModal = () => {
+    setShowModalChangeJar(false);
+    fetchData(accountSelected!);
+    notifyTransactionChanged({
+      type: 'updated',
+      accountId: selectedTransaction?.accountId || '',
+      transactionId: selectedTransaction?.id || '',
+    });
+  };
   const menuActions: OptionMenuAction[] = useMemo(
     () => [
       {
@@ -170,10 +178,7 @@ function TransactionPage() {
         JarIdCurrent={selectedTransaction?.jarId || ''}
         JarList={listJar}
         isOpen={showModalChangeJar}
-        onClose={() => {
-          setShowModalChangeJar(false);
-          fetchData(accountSelected!);
-        }}
+        onClose={handleCLoseChangeJarModal}
       />
     </View>
   );

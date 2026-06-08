@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Ref } from 'react';
 import { Text, TextInput, TextInputProps, View } from 'react-native';
 
 type InputType = 'text' | 'numeric';
@@ -11,6 +11,7 @@ type InputProps = TextInputProps & {
   type?: InputType;
   variant?: InputVariant;
   disabled?: boolean;
+  ref?: Ref<TextInput>;
 };
 
 const variantClass: Record<InputVariant, string> = {
@@ -28,6 +29,7 @@ export default function InputCustom({
   variant = 'default',
   disabled = false,
   className = '',
+  ref,
   ...props
 }: InputProps) {
   const keyboardType = type === 'numeric' ? 'numeric' : 'default';
@@ -40,6 +42,7 @@ export default function InputCustom({
 
       <TextInput
         editable={!disabled}
+        ref={ref}
         keyboardType={keyboardType}
         placeholderTextColor="#9ca3af"
         className={`

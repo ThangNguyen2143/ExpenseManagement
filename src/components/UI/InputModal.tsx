@@ -1,17 +1,31 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { PropsWithChildren } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { PropsWithChildren, RefObject } from 'react';
+import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 type Props = PropsWithChildren<{
   title?: string;
   isVisible: boolean;
   onClose: () => void;
+  initialFocusRef?: RefObject<TextInput | null>;
 }>;
 
-export default function InputModal({ isVisible, children, onClose, title }: Props) {
+export default function InputModal({
+  isVisible,
+  children,
+  onClose,
+  title,
+  initialFocusRef,
+}: Props) {
+  const handleModalShow = () => {
+    if (!initialFocusRef?.current) return;
+
+    setTimeout(() => {
+      initialFocusRef.current?.focus();
+    }, 80);
+  };
   return (
     <View className="p-2">
-      <Modal animationType="fade" transparent={true} visible={isVisible}>
+      <Modal animationType="fade" transparent={true} visible={isVisible} onShow={handleModalShow}>
         <View style={styles.modalContent}>
           <View style={styles.titleContainer}>
             <Text style={styles.title}>{title || 'Thêm giao dịch'}</Text>

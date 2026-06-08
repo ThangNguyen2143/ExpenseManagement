@@ -1,7 +1,7 @@
 import { appServices } from '@/src/services/app.service';
 import { CreateJarInput } from '@/src/services/Jar/types';
-import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { toast } from 'sonner-native';
 import InputCustom from '../../UI/InputCustom';
 import InputModal from '../../UI/InputModal';
@@ -14,6 +14,7 @@ type CreateJarModalProps = {
 function CreateJarModal({ accountId, isVisible, onClose }: CreateJarModalProps) {
   const [nameJar, setNameJar] = useState('');
   const [limitExpense, setLimitExpense] = useState(0);
+  const nameJarRef = useRef<TextInput>(null);
   const onSubmit = async () => {
     const payload: CreateJarInput = {
       name: nameJar,
@@ -36,13 +37,18 @@ function CreateJarModal({ accountId, isVisible, onClose }: CreateJarModalProps) 
     setLimitExpense(parse);
   };
   return (
-    <InputModal isVisible={isVisible} onClose={onClose} title="Tạo hũ mới">
+    <InputModal
+      isVisible={isVisible}
+      onClose={onClose}
+      title="Tạo hũ mới"
+      initialFocusRef={nameJarRef}>
       <View className="mt-4 gap-2 px-4">
         <InputCustom
           placeholder="Tên hũ"
           variant="primary"
           value={nameJar}
           onChangeText={setNameJar}
+          ref={nameJarRef}
         />
         <InputCustom
           placeholder="Giới hạn chi tiêu"

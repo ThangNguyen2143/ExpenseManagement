@@ -23,7 +23,7 @@ function TransactionCards({ item, onLongPress, onDelete }: TransactionCardProps)
         className="mb-3 rounded-2xl border border-zinc-200  p-4"
         key={item.id}
         onLongPress={onLongPress}
-        delayLongPress={2000}>
+        delayLongPress={1000}>
         <View className="mb-2 flex-row items-start justify-between">
           <View className="flex-1 pr-3">
             <Text className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
